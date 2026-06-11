@@ -1,0 +1,7 @@
+var a,b,c;
+begin
+  a:=5;
+  b:=3;
+  c:=[a+b]*2;
+  write(c)
+end.

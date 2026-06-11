@@ -28,6 +28,8 @@ enum symbol {
   geq,
   lparen,
   rparen,
+  lsquare,
+  rsquare,
   comma,
   semicolon,
   period,
@@ -47,7 +49,7 @@ enum symbol {
   forsym,
   tosym,
 };
-#define symnum 34
+#define symnum 36
 /*-------------*/
 enum object {
   constant,

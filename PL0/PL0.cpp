@@ -89,6 +89,8 @@ void init() {
   ssym['/'] = slash;
   ssym['('] = lparen;
   ssym[')'] = rparen;
+  ssym['['] = lsquare;
+  ssym[']'] = rsquare;
   ssym['='] = eql;
   ssym[','] = comma;
   ssym['.'] = period;
@@ -158,6 +160,7 @@ void init() {
   facbegsys[ident] = true;
   facbegsys[number] = true;
   facbegsys[lparen] = true;
+  facbegsys[lsquare] = true;
 }
 /*
  *用数组实现集合的集合运算
@@ -292,11 +295,14 @@ int getsym() {
           sym = nul; /*不能识别的符号*/
         }
       } else {
-        if (ch == '<') /*检测小于或小于等于符号*/
+        if (ch == '<') /*检测小于、小于等于或不等于符号*/
         {
           getchdo;
           if (ch == '=') {
             sym = leq;
+            getchdo;
+          } else if (ch == '>') {
+            sym = neq;
             getchdo;
           } else {
             sym = lss;
@@ -950,8 +956,21 @@ int factor(bool *fsys, int *ptx, int lev) {
           } else {
             error(22); /*缺少右括号*/
           }
+        } else {
+          if (sym == lsquare) /*因子为表达式，使用方括号*/
+          {
+            getsymdo;
+            memcpy(nxtlev, fsys, sizeof(bool) * symnum);
+            nxtlev[rsquare] = true;
+            expressiondo(nxtlev, ptx, lev);
+            if (sym == rsquare) {
+              getsymdo;
+            } else {
+              error(37); /*缺少右方括号*/
+            }
+          }
+          testdo(fsys, facbegsys, 23); /*因子后有非法符号*/
         }
-        testdo(fsys, facbegsys, 23); /*银子后有非法符号*/
       }
     }
   }
