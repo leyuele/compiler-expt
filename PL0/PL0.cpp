@@ -155,6 +155,7 @@ void init() {
   statbegsys[callsym] = true;
   statbegsys[ifsym] = true;
   statbegsys[whilesym] = true;
+  statbegsys[forsym] = true;
   /*设置因子开始符号集*/
   facbegsys[ident] = true;
   facbegsys[number] = true;
@@ -643,6 +644,7 @@ int statement(bool *fsys, int *ptx, int lev) {
         if (i != 0) {
           gendo(sto, lev - table[i].level, table[i].adr);
         }
+        testdo(fsys, nxtlev, 19); /*检测语句结束的正确性*/
       }
     }
   } else {
@@ -776,8 +778,73 @@ int statement(bool *fsys, int *ptx, int lev) {
                 gendo(jmp, 0, cx1);          /*回头重新判断条件*/
                 code[cx2].a = cx;            /*反填跳出循环的地址，与if类似*/
               } else {
-                memset(nxtlev, 0, sizeof(bool) * symnum); /*语句结束无补救集合*/
-                testdo(fsys, nxtlev, 19); /*检测语句结束的正确性*/
+                if (sym == forsym) /*准备按照for语句处理*/
+                {
+                  printf("*** Parser: for - step 1: detected 'for' keyword ***\n");
+                  getsymdo;
+                  if (sym != ident) {
+                    error(21); /*for后应为标识符*/
+                  } else {
+                    i = position(id, *ptx);
+                    if (i == 0) {
+                      error(11); /*变量未定义*/
+                    } else {
+                      if (table[i].kind != variable) {
+                        error(24); /*for循环变量必须是变量类型*/
+                      } else {
+                        printf("*** Parser: for - step 2: found identifier '%s' ***\n", id);
+                        printf("*** Semantic: generating for loop code... ***\n");
+                        getsymdo; /*跳过标识符*/
+                        if (sym == becomes) {
+                          getsymdo;
+                        } else {
+                          error(22); /*缺少:=*/
+                        }
+                        memcpy(nxtlev, fsys, sizeof(bool) * symnum);
+                        nxtlev[tosym] = true;
+                        printf("*** Semantic: evaluating start expression ***\n");
+                        expressiondo(nxtlev, ptx, lev); /*计算初值表达式*/
+                        gendo(sto, lev - table[i].level, table[i].adr); /*保存初值到循环变量*/
+                        if (sym == tosym) {
+                          getsymdo;
+                        } else {
+                          error(23); /*缺少to*/
+                        }
+                        memcpy(nxtlev, fsys, sizeof(bool) * symnum);
+                        nxtlev[dosym] = true;
+                        printf("*** Semantic: evaluating end expression ***\n");
+                        expressiondo(nxtlev, ptx, lev); /*计算终值表达式，结果在栈顶*/
+                        /*保存end值到临时地址100（假设不会与变量冲突）*/
+                        gendo(sto, 0, 100); 
+                        printf("*** Semantic: generating loop condition check ***\n");
+                        cx1 = cx; /*保存条件判断位置*/
+                        gendo(lod, lev - table[i].level, table[i].adr); /*加载循环变量i*/
+                        gendo(lod, 0, 100); /*加载end值*/
+                        gendo(opr, 0, 13); /*小于等于比较：i <= end ?*/
+                        cx2 = cx;
+                        gendo(jpc, 0, 0); /*如果i > end（条件为假），跳出循环*/
+                        if (sym == dosym) {
+                          getsymdo;
+                        } else {
+                          error(18); /*缺少do*/
+                        }
+                        printf("*** Semantic: generating loop body code ***\n");
+                        statementdo(fsys, ptx, lev); /*循环体代码生成*/
+                        printf("*** Semantic: generating loop increment code ***\n");
+                        gendo(lod, lev - table[i].level, table[i].adr); /*加载循环变量*/
+                        gendo(lit, 0, 1); /*加载常量1*/
+                        gendo(opr, 0, 2); /*加法：i = i + 1*/
+                        gendo(sto, lev - table[i].level, table[i].adr); /*保存回循环变量*/
+                        gendo(jmp, 0, cx1); /*跳回条件判断位置*/
+                        code[cx2].a = cx; /*反填跳出循环的地址*/
+                        printf("*** Semantic: for loop code generation COMPLETED ***\n");
+                      }
+                    }
+                  }
+                } else {
+                  memset(nxtlev, 0, sizeof(bool) * symnum); /*语句结束无补救集合*/
+                  testdo(fsys, nxtlev, 19); /*检测语句结束的正确性*/
+                }
               }
             }
           }
