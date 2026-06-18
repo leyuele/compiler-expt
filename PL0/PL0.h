@@ -50,7 +50,7 @@ enum symbol {
   forsym,
   tosym,
 };
-#define symnum 38
+#define symnum 36
 /*-------------*/
 enum object {
   constant,
