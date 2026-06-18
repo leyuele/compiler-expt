@@ -1,9 +1,10 @@
 var x, y, i;
-for i := 1 to 10 do
 begin
-  x := i;
-  write(x)
-end;
-y := 100;
-write(y)
-.
+  for i := 1 to 10 do
+  begin
+    x := i;
+    write(x)
+  end;
+  y := 100;
+  write(y)
+end.
