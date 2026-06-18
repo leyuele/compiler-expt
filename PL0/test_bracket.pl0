@@ -2,8 +2,6 @@ var a,b,c;
 begin
   a:=5;
   b:=3;
-  c:=0;
-  if a<>b then
-    c:=1;
+  c:=a*[b+2];
   write(c)
 end.

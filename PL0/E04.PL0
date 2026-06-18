@@ -1,9 +1,0 @@
-var a,b,c;
-begin
-  read(a);
-  read(b);
-  c:=0;
-  if a<>b then
-    c:=1;
-  write(c)
-end.

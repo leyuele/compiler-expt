@@ -1,0 +1,15 @@
+Iput pl/0 file ?N
+0 var a,b,c;
+
+1 begin
+
+2   a:=5;
+
+4   b:=3;
+
+6   c:=a*[b+2];
+
+12   write(c)
+
+14 end.
+

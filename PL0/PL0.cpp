@@ -159,6 +159,7 @@ void init() {
   facbegsys[ident] = true;
   facbegsys[number] = true;
   facbegsys[lparen] = true;
+  facbegsys[lbracket] = true;
 }
 /*
  *用数组实现集合的集合运算
@@ -887,7 +888,7 @@ int factor(bool *fsys, int *ptx, int lev) {
         gendo(lit, 0, num);
         getsymdo;
       } else {
-        if (sym == lparen) /*因子为表达式*/
+        if (sym == lparen) /*因子为表达式（圆括号）*/
         {
           getsymdo;
           memcpy(nxtlev, fsys, sizeof(bool) * symnum);
@@ -896,10 +897,21 @@ int factor(bool *fsys, int *ptx, int lev) {
           if (sym == rparen) {
             getsymdo;
           } else {
-            error(22); /*缺少右括号*/
+            error(22); /*缺少右圆括号*/
+          }
+        } else if (sym == lbracket) /*因子为表达式（方括号）*/
+        {
+          getsymdo;
+          memcpy(nxtlev, fsys, sizeof(bool) * symnum);
+          nxtlev[rbracket] = true;
+          expressiondo(nxtlev, ptx, lev);
+          if (sym == rbracket) {
+            getsymdo;
+          } else {
+            error(22); /*缺少右方括号*/
           }
         }
-        testdo(fsys, facbegsys, 23); /*银子后有非法符号*/
+        testdo(fsys, facbegsys, 23); /*因子后有非法符号*/
       }
     }
   }
