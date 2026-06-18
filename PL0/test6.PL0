@@ -1,0 +1,10 @@
+var x, y, i;
+begin
+  for i := 1 to 10 do
+  begin
+    x := i;
+    write(x)
+  end;
+  z := 100;
+  write(z)
+end.

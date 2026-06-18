@@ -1,15 +1,21 @@
-Iput pl/0 file ?N
-0 var a,b,c;
+Iput pl/0 file ?y
+0 var x, y, i;
 
 1 begin
 
-2   a:=5;
+2   for i := 1 to 10 do
 
-4   b:=3;
+10   begin
 
-6   c:=a*[b+2];
+10     x := i;
 
-12   write(c)
+12     write(x)
 
-14 end.
+14   end;
+
+20   z := 100;
+
+21   write(z)
+
+21 end.
 
