@@ -1,0 +1,5 @@
+var x, y, arr[10];
+x := 5;
+y := arr[3];
+write(x)
+.

@@ -89,8 +89,8 @@ void init() {
   ssym['/'] = slash;
   ssym['('] = lparen;
   ssym[')'] = rparen;
-  ssym['['] = lsquare;
-  ssym[']'] = rsquare;
+  ssym['['] = lbracket;
+  ssym[']'] = rbracket;
   ssym['='] = eql;
   ssym[','] = comma;
   ssym['.'] = period;
@@ -155,12 +155,10 @@ void init() {
   statbegsys[callsym] = true;
   statbegsys[ifsym] = true;
   statbegsys[whilesym] = true;
-  statbegsys[forsym] = true;
   /*设置因子开始符号集*/
   facbegsys[ident] = true;
   facbegsys[number] = true;
   facbegsys[lparen] = true;
-  facbegsys[lsquare] = true;
 }
 /*
  *用数组实现集合的集合运算
@@ -257,19 +255,24 @@ int getsym() {
     strcpy(id, a);
     i = 0;
     j = norw - 1;
-    while (i <= j) {
+    do {
       k = (i + j) / 2;
-      int cmp = strcmp(id, word[k]);
-      if (cmp < 0) {
+      if (strcmp(id, word[k]) <= 0) {
         j = k - 1;
-      } else if (cmp > 0) {
-        i = k + 1;
-      } else {
-        sym = wsym[k];
-        return 0;
       }
+      if (strcmp(id, word[k]) >= 0) {
+        i = k + 1;
+      }
+
+    } while (i <= j);
+    if (i - 1 > j) {
+      sym = wsym[k];
+      if (sym == forsym || sym == tosym) {
+        printf("*** Lexer detected keyword: %s ***\n", id);
+      }
+    } else {
+      sym = ident;
     }
-    sym = ident;
   } else {
     if (ch >= '0' && ch <= '9') {
       k = 0;
@@ -294,38 +297,39 @@ int getsym() {
         } else {
           sym = nul; /*不能识别的符号*/
         }
+      } else if (ch == '<') {
+        getchdo;
+        if (ch == '=') {
+          sym = leq;
+          getchdo;
+        } else if (ch == '>') {
+          sym = neqalt;
+          printf("*** Lexer detected keyword: <> ***\n");
+          getchdo;
+        } else {
+          sym = lss;
+        }
       } else {
-        if (ch == '<') /*检测小于、小于等于或不等于符号*/
+        if (ch == '>') /*检测大于或大于等于符号*/
         {
           getchdo;
           if (ch == '=') {
-            sym = leq;
-            getchdo;
-          } else if (ch == '>') {
-            sym = neq;
+            sym = geq;
             getchdo;
           } else {
-            sym = lss;
+            sym = gtr;
           }
         } else {
-          if (ch == '>') /*检测大于或大于等于符号*/
-          {
-            getchdo;
-            if (ch == '=') {
-              sym = geq;
-              getchdo;
-            } else {
-              sym = gtr;
-            }
-          } else {
-            sym = ssym[ch]; /* 当符号不满足上述条件时，全部按照单字符号处理*/
-            // getchdo;
-            // richard
-            if (sym != period) {
-              getchdo;
-            }
-            // end richard
+          sym = ssym[ch]; /* 当符号不满足上述条件时，全部按照单字符号处理*/
+          if (sym == lbracket || sym == rbracket) {
+            printf("*** Lexer detected symbol: %c ***\n", ch);
           }
+          // getchdo;
+          // richard
+          if (sym != period) {
+            getchdo;
+          }
+          // end richard
         }
       }
     }
@@ -771,70 +775,8 @@ int statement(bool *fsys, int *ptx, int lev) {
                 gendo(jmp, 0, cx1);          /*回头重新判断条件*/
                 code[cx2].a = cx;            /*反填跳出循环的地址，与if类似*/
               } else {
-                if (sym == forsym) /*准备按照for语句处理*/
-                {
-                  getsymdo;
-                  if (sym == ident) {
-                    i = position(id, *ptx);
-                    if (i == 0) {
-                      error(11); /*标识符未声明*/
-                    } else {
-                      if (table[i].kind != variable) {
-                        error(12); /*不是变量*/
-                        i = 0;
-                      }
-                    }
-                    getsymdo; /*获取下一个符号*/
-                  } else {
-                    i = 0;
-                    error(4); /*缺少标识符*/
-                  }
-                  if (sym == becomes) {
-                    getsymdo;
-                  } else {
-                    error(13); /*缺少赋值符号*/
-                  }
-                  memcpy(nxtlev, fsys, sizeof(bool) * symnum);
-                  nxtlev[tosym] = true;
-                  expressiondo(nxtlev, ptx, lev); /*处理初值表达式*/
-                  if (i != 0) {
-                    gendo(sto, lev - table[i].level, table[i].adr); /*保存初值到循环变量*/
-                  }
-                  if (sym == tosym) {
-                    getsymdo;
-                  } else {
-                    error(36); /*缺少to*/
-                  }
-                  cx1 = cx; /*保存循环变量地址*/
-                  if (i != 0) {
-                    gendo(lod, lev - table[i].level, table[i].adr); /*取循环变量*/
-                  }
-                  memcpy(nxtlev, fsys, sizeof(bool) * symnum);
-                  nxtlev[dosym] = true;
-                  expressiondo(nxtlev, ptx, lev); /*处理终值表达式*/
-                  gendo(opr, 0, 13); /*比较循环变量<=终值*/
-                  cx2 = cx;
-                  gendo(jpc, 0, 0); /*如果不满足则跳出循环*/
-                  if (sym == dosym) {
-                    getsymdo;
-                  } else {
-                    error(18); /*缺少do*/
-                  }
-                  statementdo(fsys, ptx, lev); /*循环体*/
-                  if (i != 0) {
-                    gendo(lod, lev - table[i].level, table[i].adr); /*取循环变量*/
-                  }
-                  gendo(lit, 0, 1); /*常量1*/
-                  gendo(opr, 0, 2); /*循环变量+1*/
-                  if (i != 0) {
-                    gendo(sto, lev - table[i].level, table[i].adr); /*保存回循环变量*/
-                  }
-                  gendo(jmp, 0, cx1); /*跳回比较处*/
-                  code[cx2].a = cx; /*反填跳出地址*/
-                } else {
-                  memset(nxtlev, 0, sizeof(bool) * symnum); /*语句结束无补救集合*/
-                  testdo(fsys, nxtlev, 19); /*检测语句结束的正确性*/
-                }
+                memset(nxtlev, 0, sizeof(bool) * symnum); /*语句结束无补救集合*/
+                testdo(fsys, nxtlev, 19); /*检测语句结束的正确性*/
               }
             }
           }
@@ -956,21 +898,8 @@ int factor(bool *fsys, int *ptx, int lev) {
           } else {
             error(22); /*缺少右括号*/
           }
-        } else {
-          if (sym == lsquare) /*因子为表达式，使用方括号*/
-          {
-            getsymdo;
-            memcpy(nxtlev, fsys, sizeof(bool) * symnum);
-            nxtlev[rsquare] = true;
-            expressiondo(nxtlev, ptx, lev);
-            if (sym == rsquare) {
-              getsymdo;
-            } else {
-              error(37); /*缺少右方括号*/
-            }
-          }
-          testdo(fsys, facbegsys, 23); /*因子后有非法符号*/
         }
+        testdo(fsys, facbegsys, 23); /*银子后有非法符号*/
       }
     }
   }

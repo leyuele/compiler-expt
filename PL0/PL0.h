@@ -22,14 +22,15 @@ enum symbol {
   oddsym,
   eql,
   neq,
+  neqalt,
   lss,
   leq,
   gtr,
   geq,
   lparen,
   rparen,
-  lsquare,
-  rsquare,
+  lbracket,
+  rbracket,
   comma,
   semicolon,
   period,
@@ -49,7 +50,7 @@ enum symbol {
   forsym,
   tosym,
 };
-#define symnum 36
+#define symnum 38
 /*-------------*/
 enum object {
   constant,
