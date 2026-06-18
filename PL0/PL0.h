@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-#define norw 15   /*关键字个数*/
+#define norw 13   /*关键字个数*/
 #define txmax 100 /*名字表容量*/
 #define nmax 14   /*number的最大位数*/
 #define al 10     /*符号的最大长度*/
@@ -28,8 +28,6 @@ enum symbol {
   geq,
   lparen,
   rparen,
-  lsquare,
-  rsquare,
   comma,
   semicolon,
   period,
@@ -46,10 +44,8 @@ enum symbol {
   constsym,
   varsym,
   procsym,
-  forsym,
-  tosym,
 };
-#define symnum 36
+#define symnum 32
 /*-------------*/
 enum object {
   constant,
