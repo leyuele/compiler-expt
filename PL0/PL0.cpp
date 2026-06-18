@@ -155,6 +155,7 @@ void init() {
   statbegsys[callsym] = true;
   statbegsys[ifsym] = true;
   statbegsys[whilesym] = true;
+  statbegsys[forsym] = true;
   /*设置因子开始符号集*/
   facbegsys[ident] = true;
   facbegsys[number] = true;
@@ -775,8 +776,51 @@ int statement(bool *fsys, int *ptx, int lev) {
                 gendo(jmp, 0, cx1);          /*回头重新判断条件*/
                 code[cx2].a = cx;            /*反填跳出循环的地址，与if类似*/
               } else {
-                memset(nxtlev, 0, sizeof(bool) * symnum); /*语句结束无补救集合*/
-                testdo(fsys, nxtlev, 19); /*检测语句结束的正确性*/
+                if (sym == forsym) /*准备按照for语句处理*/
+                {
+                  printf("*** Parser: for - step 1: detected 'for' keyword ***\n");
+                  getsymdo;
+                  if (sym != ident) {
+                    error(21); /*for后应为标识符*/
+                  } else {
+                    printf("*** Parser: for - step 2: found identifier '%s' ***\n", id);
+                    getsymdo; /*跳过标识符*/
+                    if (sym == becomes) {
+                      printf("*** Parser: for - step 3: found ':=' ***\n");
+                      getsymdo;
+                    } else {
+                      error(22); /*缺少:=*/
+                    }
+                    memcpy(nxtlev, fsys, sizeof(bool) * symnum);
+                    nxtlev[tosym] = true;
+                    printf("*** Parser: for - step 4: parsing start expression ***\n");
+                    expressiondo(nxtlev, ptx, lev); /*处理初值表达式（语法分析）*/
+                    if (sym == tosym) {
+                      printf("*** Parser: for - step 5: found 'to' keyword ***\n");
+                      getsymdo;
+                    } else {
+                      error(23); /*缺少to*/
+                    }
+                    memcpy(nxtlev, fsys, sizeof(bool) * symnum);
+                    nxtlev[dosym] = true;
+                    printf("*** Parser: for - step 6: parsing end expression ***\n");
+                    expressiondo(nxtlev, ptx, lev); /*处理终值表达式（语法分析）*/
+                    if (sym == dosym) {
+                      printf("*** Parser: for - step 7: found 'do' keyword ***\n");
+                      getsymdo;
+                    } else {
+                      error(18); /*缺少do*/
+                    }
+                    printf("*** Parser: for - step 8: parsing loop body ***\n");
+                    statementdo(fsys, ptx, lev); /*处理循环体（语法分析）*/
+                    printf("*** Parser: for statement syntax analysis COMPLETED ***\n");
+                    printf("*** Semantic analysis: for loop code generation NOT IMPLEMENTED ***\n");
+                    printf("*** Note: Program will run but for loop will not work correctly ***\n");
+                  }
+                } else {
+                  memset(nxtlev, 0, sizeof(bool) * symnum); /*语句结束无补救集合*/
+                  testdo(fsys, nxtlev, 19); /*检测语句结束的正确性*/
+                }
               }
             }
           }
